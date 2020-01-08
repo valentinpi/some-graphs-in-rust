@@ -1,0 +1,106 @@
+About ownership
+
+String literals are allocated on the stack, since they never change.
+Strings are allocated on the heap, since they are dynamic data structures.
+
+// Compiles since i is a string literal allocate on the stack
+// i has the Copy trait
+let i = "Hello, ";
+let j = i;
+println!("{}", i);
+    
+// Does not compile, since i is allocated on the heap and moved
+// i has the Copy and Drop trait
+let i = String::from("Hello, ");
+let j = i;
+println!("{}", i);
+
+// Compiles, since i is allocated on the heap but cloned
+let i = String::from("Hello, ");
+let j = i.clone();
+println!("{}", i);
+
+With functions:
+
+// Does not compile, since ownership is taken by function
+fn takes_ownership(str: String) -> String{
+    str
+}
+...
+let i = String::from("Hello");
+takes_ownership(i);
+println!("{}", i);
+
+// Example
+fn gives_ownership() -> String {
+    let i = String::from("Hello");
+
+    i
+}
+
+fn takes_ownership_and_returns(str: String) -> String {
+    str
+}
+...
+let i = gives_ownership();
+let j = takes_ownership_and_returns(i);
+println!("{}", j);
+
+Note: The drop function cleans up the reserved memory and is automatically called
+if variable gets out of scope (RAII, similar to C++)
+
+References
+
+// Example
+fn calc_len(str: &String) -> usize {
+    str.len()
+}
+...
+let i = String::from("Hello");
+let i_len = calc_len(&i);
+println!("\"{}\" is {} characters long", i, i_len);
+
+// Another one for tuple return
+fn calc_len_tuple(str: String) -> (String, usize) {
+    // We have to do this, since in the tuple expression we can not
+    // use the str parameter twice for the len call since it will have been
+    // moved
+    let len = str.len();
+
+    (str, len)
+}
+...
+let i = String::from("Valentin");
+let (j, j_len) = calc_len_tuple(i);
+println!("\"{}\" is {} characters long", j, j_len);
+
+Mutable references
+Dandling references
+are avoided in Rust since the deallocation is managed by the language itself.
+Dandling references occur when the deallocation of a resource occurs while returning
+the address to it. The Rust compiler does not let us do this, so we can safely
+return the variable itself and the ownership system automatically moves the values
+without deallocation and dandling pointers, which are dangerous when dereferenced.
+
+Some code snippets I made when developing
+
+1.
+
+print!("{}", graph);
+
+for _i in 1..100 {
+    let random = (rand::random::<u32>() % 40) as i32 - 20;
+    print!("{} ", random);
+}
+println!();
+
+let mut graph = Graph {
+    nodes: vec![(-1,1), (0,-1), (1,1)],
+    vertices: vec![(0, 1)]
+};
+
+for _i in 1..5 {
+    let u = (rand::random::<usize>() % *&graph.nodes.len()) as usize;
+    let v = (rand::random::<usize>() % *&graph.nodes.len()) as usize;
+    &graph.vertices.push((u, v));
+}
